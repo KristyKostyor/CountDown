@@ -1,97 +1,98 @@
-const inputContainer = document.querySelector(".container");
-const countdownForm = document.querySelector(".input");
-const dateEl = document.querySelector("#date");
-const countdownEl = document.querySelector("#title-date");
-const countdownElTitle = document.querySelector(".time-labels");
-const countdownBtn = document.querySelector("#btn");
-const timeElements = document.querySelectorAll("p");
-
-const completeBtn = document.querySelector("#btn-reset");
-
-let countdownTitle = "";
-let countdownDate = "";
-let countdownValue = Date;
-let countdownActive;
-let savedCountdown;
+const btn = document.getElementById('btn');
+const btnReset = document.getElementById('btn-reset');
+const titleStatus = document.querySelector('.complete');
+const titleDate = document.getElementById('title-date');
+const inputDate = document.getElementById ('date');
+const inputWrapper = document.querySelector('.input');
+const outputWrapper = document.querySelector('.output');
+const outputNumbers = document.querySelector ('.numbers');
+const countdownTitile = document.querySelector('h1');
 
 const second = 1000;
 const minute = second * 60;
 const hour = minute * 60;
 const day = hour * 24;
 
-const today = new Date().toISOString().split("T")[0];
-dateEl.setAttribute("min", today);
+let countdownDate = '';
+let interval;
 
-function updateDOM() {
-  countdownActive = setInterval(() => {
-    const now = new Date().getTime();
-    const distance = countdownValue - now;
 
-    const days = Math.floor(distance / day);
-    const hours = Math.floor((distance % day) / hour);
-    const minutes = Math.floor((distance % hour) / minute);
-    const seconds = Math.floor((distance % minute) / second);
+function startCountDown() {
+  countdownDate = inputDate.value;
 
-    inputContainer.hidden = true;
+  if(countdownDate ===  '') {
+    alert('Пожалуйста, введите дату!');
+    return;
+  } else if (isNaN(Date.parse(countdownDate))){
+    alert('Пожалуйста введите корректирую дату');
+    return;
+  }
+  countdownTitile.textContent = titleDate.value;
+  localStorage.setItem('titleTimer', titleDate.value);
+  localStorage.setItem ('dateTimer', inputDate.value);
+  showNextView();
+}
 
-    if (distance <= 0) {
-      countdownEl.hidden = true;
-      clearInterval(countdownActive);
-      completeElInfo.textContent = `${countdownTitle} was finished on ${countdownDate}`;
-      completeEl.hidden = false;
-    } else {
-      countdownElTitle.textContent = `${countdownTitle}`;
-      timeElements[0].textContent = `${days}`;
-      timeElements[1].textContent = `${hours}`;
-      timeElements[2].textContent = `${minutes}`;
-      timeElements[3].textContent = `${seconds}`;
+function showNextView() {
+  btn.classList.add('hide');
+  btnReset.classList.remove('hide');
+  inputWrapper.classList.add('hide');
+  outputWrapper.classList.remove('hide');
 
-      countdownEl.hidden = false;
+dateCalculation();
+interval = setInterval(dateCalculation, second);
+
+}
+
+function dateCalculation() {
+const now = new Date().getTime();
+const distance = new Date(countdownDate).getTime() - now;
+
+    if (distance < 0) {
+      outputWrapper.classList.add('hide');
+      titleStatus.classList.remove('remove');
+      clearInterval(interval);
+      titleStatus.textContent = ` ${countdownTitile.textContent} завершился ${countdownDate}`;
+      return;
     }
-  }, second);
+  
+
+const days = Math.floor(distance / day);
+const hours = Math.floor((distance % day) / hour);
+const minutes = Math.floor((distance % hour) / minute);
+const seconds = Math.floor((distance % minute) / second);
+
+outputNumbers.textContent = `${days} : ${hours} : ${minutes} : ${seconds}`;
+
+}
+function resetCountDown() {
+  btn.classList.add("hide");
+  btnReset.classList.remove("hide");
+  inputWrapper.classList.add("hide");
+  outputWrapper.classList.remove("hide");
+  titleStatus.classList.add('hide');
+
+  countdownTitile.textContent = 'Создать новый таймер обратного отчета';
+  titleDate.value = '';
+  inputDate.value = '';
+
+  clearInterval(interval);
+  localStorage.removeItem('titleTimer');
+  localStorage.removeItem('dataTimer');
 }
 
-function updateCountdown(e) {
-  e.preventDefault();
-  countdownTitle = e.input.value;
-  countdownDate = e.input.value;
-  savedCountdown = {
-    title: countdownTitle,
-    date: countdownDate,
-  };
-  localStorage.setItem("output", JSON.stringify(savedCountdown));
+function restoreCountDown() {
+ const titleTimer = localStorage.getItem ('titleTimer');
+ const dataTimer = localStorage.getItem('dataTimer');
 
-  if (countdownDate === "" || countdownTitle === "") {
-    alert("incomplete form");
-  } else {
-    countdownValue = new Date(countdownDate).getTime();
-    updateDOM();
-  }
+ if(!(titleTimer && dataTimer)) {
+  return;
+ }
+ countdownTitile.textContent = titleTimer;
+ countdownDate = dataTimer;
+ showNextView();
 }
+btn.addEventListener('click', startCountDown);
+btnReset.addEventListener('click', resetCountDown);
 
-function reset() {
-  inputContainer.hidden = false;
-
-  clearInterval(countdownActive);
-
-  countdownDate = "";
-  countdownTitle = "";
-  localStorage.removeItem("output");
-}
-
-function restorePreviousCountdown() {
-  if (localStorage.getItem("output")) {
-    inputContainer.hidden = true;
-    savedCountdown = JSON.parse(localStorage.getItem("output"));
-    countdownTitle = savedCountdown.title;
-    countdownDate = savedCountdown.date;
-    countdownValue = new Date(countdownDate).getTime();
-    updateDOM();
-  }
-}
-
-countdownBtn.addEventListener("click", updateCountdown);
-countdownBtn.addEventListener("click", reset);
-completeBtn.addEventListener("click", reset);
-
-restorePreviousCountdown();
+restoreCountDown();
